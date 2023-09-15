@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package dgo.example;
+option go_package = "examples/pb";
+
+message ProductCreated {
+  string name = 1;
+  uint64 uint64 = 2;
+}
+
+message AccountCreated {
+  string name = 1;
+  uint64 balance = 2;
+}
+
+message AccountBalanceIncreased {
+  uint64 amount = 1;
+}
+
+message AccountBalanceDecreased {
+  uint64 amount = 1;
+}

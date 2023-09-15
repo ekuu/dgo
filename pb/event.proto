@@ -1,0 +1,21 @@
+syntax = "proto3";
+package dgo.v1;
+option go_package = "/pb";
+
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+message Event {
+    string name = 1;                          // 事件名称
+    string agg_id = 2;                        // 聚合ID
+    string agg_name = 3;                      // 聚合名称
+    uint64 agg_version = 4;                   // 聚合版本
+    google.protobuf.Timestamp created_at = 5; // 创建时间
+    string uuid = 6;                          // uuid
+    google.protobuf.Any payload = 10;         // 有效数据
+}
+
+message PublishRequest {
+    string topic  = 1;
+    Event event = 2;
+}
