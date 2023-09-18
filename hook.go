@@ -18,7 +18,7 @@ type Validator interface {
 
 // AggConstructor 构造器接口
 type AggConstructor[A AggBase] interface {
-	AggConstruct() A
+	NewAggregate() A
 }
 
 // MultiDocuments 该接口应由聚合实现

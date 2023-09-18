@@ -3,9 +3,8 @@ package account
 import (
 	"context"
 
-	"github.com/ekuu/dgo/internal/examples/pb"
-
 	"github.com/ekuu/dgo"
+	"github.com/ekuu/dgo/internal/examples/pb"
 )
 
 type CreateCmd struct {

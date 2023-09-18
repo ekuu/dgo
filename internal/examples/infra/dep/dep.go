@@ -69,7 +69,7 @@ func ProductSvc() *dgo.Service[*product.Product] {
 		func() *product.Product {
 			return product.New(dgo.NewAggBase())
 		},
-		dgo.WithServiceIdGenerator[*product.Product](func(ctx context.Context) (dgo.ID, error) {
+		dgo.WithServiceIdGenFunc[*product.Product](func(ctx context.Context) (dgo.ID, error) {
 			return dr.NewObjectID().Reverse(), nil
 		}),
 	)

@@ -37,7 +37,16 @@ func NewVid(id ID, version uint64) Vid {
 	return NewAggBase(WithAggBaseId(id), WithAggBaseVersion(version))
 }
 
-type IDGenerator func(ctx context.Context) (ID, error)
+// IDGenerator ID生成接口
+type IDGenerator interface {
+	GenID(ctx context.Context) (ID, error)
+}
+
+type IDGenFunc func(ctx context.Context) (ID, error)
+
+func (f IDGenFunc) GenID(ctx context.Context) (ID, error) {
+	return f(ctx)
+}
 
 func GenNoHyphenUUID(ctx context.Context) (ID, error) {
 	return ID(internal.UUIDNoHyphen()), nil

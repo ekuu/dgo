@@ -23,6 +23,13 @@ type Account struct {
 	balance uint64
 }
 
+func (a *Account) ID() dgo.ID {
+	if a.AggBase.ID().IsEmpty() {
+		return dgo.ID(fmt.Sprintf("acc_%s", a.name))
+	}
+	return a.AggBase.ID()
+}
+
 func (a *Account) Name() string {
 	return a.name
 }

@@ -15,18 +15,24 @@ type ActionTarget interface {
 
 // Service 带有事务的仓储接口包装，用于处理通用逻辑
 //
-//go:generate gogen option -n Service -r repo,aggConstruct --with-init
+//go:generate gogen option -n Service -r repo,newAggregate --with-init
 type Service[A AggBase] struct {
 	repo                 Repo[A]
 	bus                  Bus
 	idGenerator          IDGenerator
-	aggConstruct         func() A
+	newAggregate         func() A
 	snapshotSaveStrategy SnapshotSaveStrategy[A]
+}
+
+func WithServiceIdGenFunc[A AggBase](f func(ctx context.Context) (ID, error)) ServiceOption[A] {
+	return serviceOptionFunc[A](func(_s *Service[A]) {
+		_s.idGenerator = IDGenFunc(f)
+	})
 }
 
 func (s *Service[A]) init() {
 	if s.idGenerator == nil {
-		s.idGenerator = GenNoHyphenUUID
+		s.idGenerator = IDGenFunc(GenNoHyphenUUID)
 	}
 	if s.snapshotSaveStrategy == nil {
 		s.snapshotSaveStrategy = NeverSaveSnapshot[A]
@@ -62,10 +68,7 @@ func (s *Service[A]) create(ctx context.Context, h Handler[A], a A) (A, error) {
 		return a, err
 	}
 	if a.ID().IsEmpty() {
-		if s.idGenerator == nil {
-			return a, pkgerr.WithStack(ErrIDNil)
-		}
-		id, err := s.idGenerator(ctx)
+		id, err := s.idGenerator.GenID(ctx)
 		if err != nil {
 			return a, err
 		}
@@ -231,9 +234,9 @@ func (s *Service[A]) getAggFromTarget(ctx context.Context, t ActionTarget) (a A,
 
 func (s *Service[A]) getAggConstruct(h any) func() A {
 	if v, ok := h.(AggConstructor[A]); ok {
-		return v.AggConstruct
+		return v.NewAggregate
 	}
-	return s.aggConstruct
+	return s.newAggregate
 }
 
 // transaction 事务

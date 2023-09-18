@@ -20,7 +20,7 @@ func TestTranslate(t *testing.T) {
 }
 
 func TestCreateAccount(t *testing.T) {
-	a, err := CreateAccount(context.Background(), &account.CreateCmd{Name: "zhangsan2", Balance: 100})
+	a, err := CreateAccount(context.Background(), &account.CreateCmd{Name: "zhangsan11", Balance: 100})
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}

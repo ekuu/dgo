@@ -9,7 +9,6 @@ require (
 	github.com/huandu/go-clone/generic v1.4.0
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.33.0
-	github.com/stretchr/testify v1.8.0
 	go.mongodb.org/mongo-driver v1.10.3
 	google.golang.org/protobuf v1.28.1
 )
@@ -26,16 +25,12 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/r3labs/diff/v3 v3.0.1 // indirect
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/sirupsen/logrus v1.4.0 // indirect
 	github.com/stathat/consistent v1.0.0 // indirect
 	github.com/tidwall/gjson v1.13.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
-	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
-	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.1 // indirect
 	github.com/xdg-go/stringprep v1.0.3 // indirect
@@ -48,5 +43,4 @@ require (
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
