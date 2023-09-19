@@ -130,6 +130,53 @@ func (x *AccountCreated) GetBalance() uint64 {
 	return 0
 }
 
+type AccountNameUpdated struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+}
+
+func (x *AccountNameUpdated) Reset() {
+	*x = AccountNameUpdated{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_examples_pb_event_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *AccountNameUpdated) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccountNameUpdated) ProtoMessage() {}
+
+func (x *AccountNameUpdated) ProtoReflect() protoreflect.Message {
+	mi := &file_examples_pb_event_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccountNameUpdated.ProtoReflect.Descriptor instead.
+func (*AccountNameUpdated) Descriptor() ([]byte, []int) {
+	return file_examples_pb_event_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *AccountNameUpdated) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
 type AccountBalanceIncreased struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -141,7 +188,7 @@ type AccountBalanceIncreased struct {
 func (x *AccountBalanceIncreased) Reset() {
 	*x = AccountBalanceIncreased{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_examples_pb_event_proto_msgTypes[2]
+		mi := &file_examples_pb_event_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -154,7 +201,7 @@ func (x *AccountBalanceIncreased) String() string {
 func (*AccountBalanceIncreased) ProtoMessage() {}
 
 func (x *AccountBalanceIncreased) ProtoReflect() protoreflect.Message {
-	mi := &file_examples_pb_event_proto_msgTypes[2]
+	mi := &file_examples_pb_event_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -167,7 +214,7 @@ func (x *AccountBalanceIncreased) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AccountBalanceIncreased.ProtoReflect.Descriptor instead.
 func (*AccountBalanceIncreased) Descriptor() ([]byte, []int) {
-	return file_examples_pb_event_proto_rawDescGZIP(), []int{2}
+	return file_examples_pb_event_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *AccountBalanceIncreased) GetAmount() uint64 {
@@ -188,7 +235,7 @@ type AccountBalanceDecreased struct {
 func (x *AccountBalanceDecreased) Reset() {
 	*x = AccountBalanceDecreased{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_examples_pb_event_proto_msgTypes[3]
+		mi := &file_examples_pb_event_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -201,7 +248,7 @@ func (x *AccountBalanceDecreased) String() string {
 func (*AccountBalanceDecreased) ProtoMessage() {}
 
 func (x *AccountBalanceDecreased) ProtoReflect() protoreflect.Message {
-	mi := &file_examples_pb_event_proto_msgTypes[3]
+	mi := &file_examples_pb_event_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -214,7 +261,7 @@ func (x *AccountBalanceDecreased) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AccountBalanceDecreased.ProtoReflect.Descriptor instead.
 func (*AccountBalanceDecreased) Descriptor() ([]byte, []int) {
-	return file_examples_pb_event_proto_rawDescGZIP(), []int{3}
+	return file_examples_pb_event_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *AccountBalanceDecreased) GetAmount() uint64 {
@@ -237,15 +284,17 @@ var file_examples_pb_event_proto_rawDesc = []byte{
 	0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01,
 	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x62, 0x61,
 	0x6c, 0x61, 0x6e, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x07, 0x62, 0x61, 0x6c,
-	0x61, 0x6e, 0x63, 0x65, 0x22, 0x31, 0x0a, 0x17, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x42,
-	0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x49, 0x6e, 0x63, 0x72, 0x65, 0x61, 0x73, 0x65, 0x64, 0x12,
-	0x16, 0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52,
-	0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x22, 0x31, 0x0a, 0x17, 0x41, 0x63, 0x63, 0x6f, 0x75,
-	0x6e, 0x74, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65, 0x44, 0x65, 0x63, 0x72, 0x65, 0x61, 0x73,
-	0x65, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x04, 0x52, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x42, 0x0d, 0x5a, 0x0b, 0x65, 0x78,
-	0x61, 0x6d, 0x70, 0x6c, 0x65, 0x73, 0x2f, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x61, 0x6e, 0x63, 0x65, 0x22, 0x28, 0x0a, 0x12, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x4e,
+	0x61, 0x6d, 0x65, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61,
+	0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x22, 0x31,
+	0x0a, 0x17, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x42, 0x61, 0x6c, 0x61, 0x6e, 0x63, 0x65,
+	0x49, 0x6e, 0x63, 0x72, 0x65, 0x61, 0x73, 0x65, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x61, 0x6d, 0x6f,
+	0x75, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x61, 0x6d, 0x6f, 0x75, 0x6e,
+	0x74, 0x22, 0x31, 0x0a, 0x17, 0x41, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x42, 0x61, 0x6c, 0x61,
+	0x6e, 0x63, 0x65, 0x44, 0x65, 0x63, 0x72, 0x65, 0x61, 0x73, 0x65, 0x64, 0x12, 0x16, 0x0a, 0x06,
+	0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x06, 0x61, 0x6d,
+	0x6f, 0x75, 0x6e, 0x74, 0x42, 0x0d, 0x5a, 0x0b, 0x65, 0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x73,
+	0x2f, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -260,12 +309,13 @@ func file_examples_pb_event_proto_rawDescGZIP() []byte {
 	return file_examples_pb_event_proto_rawDescData
 }
 
-var file_examples_pb_event_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_examples_pb_event_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_examples_pb_event_proto_goTypes = []interface{}{
 	(*ProductCreated)(nil),          // 0: dgo.example.ProductCreated
 	(*AccountCreated)(nil),          // 1: dgo.example.AccountCreated
-	(*AccountBalanceIncreased)(nil), // 2: dgo.example.AccountBalanceIncreased
-	(*AccountBalanceDecreased)(nil), // 3: dgo.example.AccountBalanceDecreased
+	(*AccountNameUpdated)(nil),      // 2: dgo.example.AccountNameUpdated
+	(*AccountBalanceIncreased)(nil), // 3: dgo.example.AccountBalanceIncreased
+	(*AccountBalanceDecreased)(nil), // 4: dgo.example.AccountBalanceDecreased
 }
 var file_examples_pb_event_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -306,7 +356,7 @@ func file_examples_pb_event_proto_init() {
 			}
 		}
 		file_examples_pb_event_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AccountBalanceIncreased); i {
+			switch v := v.(*AccountNameUpdated); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -318,6 +368,18 @@ func file_examples_pb_event_proto_init() {
 			}
 		}
 		file_examples_pb_event_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*AccountBalanceIncreased); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_examples_pb_event_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*AccountBalanceDecreased); i {
 			case 0:
 				return &v.state
@@ -336,7 +398,7 @@ func file_examples_pb_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_examples_pb_event_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

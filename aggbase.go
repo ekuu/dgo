@@ -18,6 +18,7 @@ type AggBase interface {
 	IsNew() bool
 	AddEvent(payload proto.Message, opts ...EventOption)
 	getEvents() Events
+	tempCleanEvents(fn func(events Events))
 	changed() bool
 	setID(id ID)
 	setUpdatedAt()
@@ -35,8 +36,9 @@ type aggBase struct {
 	updatedAt    time.Time
 	version      uint64
 	versionDelta uint64
-	now          time.Time // 若为快照，则now的值应为快照保存的时间
-	events       Events
+	// TODO 删除
+	now    time.Time // 若为快照，则now的值应为快照保存的时间
+	events Events
 }
 
 func (b *aggBase) init() {
@@ -83,8 +85,14 @@ func (b *aggBase) IsNew() bool {
 func (b *aggBase) AddEvent(payload proto.Message, opts ...EventOption) {
 	e := NewEvent(payload, opts...)
 	e.aggID = b.ID()
-	e.aggVersion = b.incrVersion()
 	b.events = append(b.events, e)
+}
+
+func (b *aggBase) tempCleanEvents(fn func(events Events)) {
+	events := b.events
+	b.events = nil
+	fn(events)
+	b.events = events
 }
 
 func (b *aggBase) getEvents() Events {
@@ -122,6 +130,7 @@ func (b *aggBase) completeEvents(v any) {
 	}
 	for i, e := range b.events {
 		b.events[i].aggName = aggName
+		b.events[i].aggVersion = b.incrVersion()
 		if e.Topic() == "" {
 			b.events[i].topic = topic
 		}

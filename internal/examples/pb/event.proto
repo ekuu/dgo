@@ -13,6 +13,10 @@ message AccountCreated {
   uint64 balance = 2;
 }
 
+message AccountNameUpdated {
+  string name = 1;
+}
+
 message AccountBalanceIncreased {
   uint64 amount = 1;
 }

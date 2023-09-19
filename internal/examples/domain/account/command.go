@@ -26,11 +26,13 @@ func (c *CreateCmd) Handle(ctx context.Context, a *Account) error {
 }
 
 type UpdateNameCmd struct {
+	ID   dgo.ID
 	Name string
 }
 
 func (c UpdateNameCmd) Handle(ctx context.Context, a *Account) error {
 	a.name = c.Name
+	a.AddEvent(&pb.AccountNameUpdated{Name: a.name})
 	return nil
 }
 

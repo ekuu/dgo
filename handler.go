@@ -40,7 +40,14 @@ func Handle[A AggBase](ctx context.Context, h Handler[A], a A) (A, error) {
 		if err := h.Handle(ctx, a); err != nil {
 			return a, err
 		}
-		if reflect.DeepEqual(a, cloned) {
+		var equals bool
+		a.tempCleanEvents(func(events Events) {
+			// 事件个数小于等于1的时候比较聚合的内容是否发生了变化
+			if len(events) <= 1 {
+				equals = reflect.DeepEqual(a, cloned)
+			}
+		})
+		if equals {
 			return a, nil
 		} else {
 			a.setUpdatedAt()

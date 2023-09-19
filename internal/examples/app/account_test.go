@@ -27,3 +27,15 @@ func TestCreateAccount(t *testing.T) {
 	spew.Dump(a)
 	time.Sleep(time.Millisecond * 300)
 }
+
+func TestUpdateAccountName(t *testing.T) {
+	a, err := UpdateAccountName(context.Background(), &account.UpdateNameCmd{
+		ID:   "acc_zhangsan11",
+		Name: "test-name1",
+	})
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+	spew.Dump(a)
+	time.Sleep(time.Millisecond * 300)
+}
