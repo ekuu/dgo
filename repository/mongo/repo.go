@@ -13,30 +13,24 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-//go:generate gogen option -n Repo -r db,agg,event,snapshot,convert,reverse,newData,parseID --with-init
+//go:generate gogen option -n Repo -r db,agg,event,convert,reverse,newData,parseID --with-init
 type Repo[I repo.ID, A dgo.AggBase, D any] struct {
-	db                   *mg.Database
-	agg, event, snapshot *mg.Collection
-	convert              func(context.Context, A) (D, error)
-	reverse              func(context.Context, dgo.AggBase, D) (A, error)
-	newData              func() D
-	parseID              repo.ParseID[I]
-	getVid               repo.NewVid[I]
-	newEvent             func() repo.Event[I]
-	newSnapshot          func() repo.Snapshot[I, Aggregate[I, D]]
-	newAggregate         func() Aggregate[I, D]
-	versionFieldName     string
-	closeTransaction     bool
+	db               *mg.Database
+	agg, event       *mg.Collection
+	convert          func(context.Context, A) (D, error)
+	reverse          func(context.Context, dgo.AggBase, D) (A, error)
+	newData          func() D
+	parseID          repo.ParseID[I]
+	getVid           repo.NewVid[I]
+	newEvent         func() repo.Event[I]
+	newAggregate     func() Aggregate[I, D]
+	versionFieldName string
+	closeTransaction bool
 }
 
 func (r *Repo[I, A, D]) init() {
 	if r.newEvent == nil {
 		r.newEvent = NewEvent[I]
-	}
-	if r.newSnapshot == nil {
-		r.newSnapshot = func() repo.Snapshot[I, Aggregate[I, D]] {
-			return NewSnapshot[I, D]()
-		}
 	}
 	if r.newAggregate == nil {
 		r.newAggregate = NewAggregate[I, D]
@@ -68,7 +62,6 @@ func NewDefaultRepo[I repo.ID, A dgo.AggBase, D any](
 		db,
 		db.Collection(aggrName),
 		db.Collection(aggrName+"Event"),
-		db.Collection(aggrName+"Snapshot"),
 		convert,
 		reverse,
 		newData,
@@ -87,10 +80,6 @@ func (r *Repo[I, A, D]) Agg() *mg.Collection {
 
 func (r *Repo[I, A, D]) Event() *mg.Collection {
 	return r.event
-}
-
-func (r *Repo[I, A, D]) Snapshot() *mg.Collection {
-	return r.snapshot
 }
 
 func (r *Repo[I, A, D]) da2pa(ctx context.Context, da A) (Aggregate[I, D], error) {
@@ -136,28 +125,7 @@ func (r *Repo[I, A, D]) List(ctx context.Context, ids ...dgo.ID) (as []A, err er
 	return r.FindDAs(ctx, bson.M{"_id": bson.M{"$in": rids}})
 }
 
-func (r *Repo[I, A, D]) Replay(ctx context.Context, id dgo.ID, version uint64) (*dgo.Snapshot[A], error) {
-	snapshotID, err := r.getVid(id, version)
-	if err != nil {
-		return nil, err
-	}
-	ss := r.newSnapshot()
-	filter := bson.M{"_id": snapshotID}
-	err = ReplaceError(r.snapshot.FindOne(ctx, filter).Decode(ss))
-	if err != nil {
-		return nil, pkgerr.WithMessagef(err, "mongo collection %s, filter: %+v", r.snapshot.Name(), filter)
-	}
-
-	pa := ss.GetAggregate()
-	pa.SetSnapshotSaveAt(ss.GetSaveAt())
-	a, err := r.PA2DA(ctx, pa)
-	if err != nil {
-		return nil, pkgerr.WithStack(err)
-	}
-	return &dgo.Snapshot[A]{Aggregate: a, SaveAt: ss.GetSaveAt()}, nil
-}
-
-func (r *Repo[I, A, D]) Save(ctx context.Context, a A, saveSnapshot bool) error {
+func (r *Repo[I, A, D]) Save(ctx context.Context, a A) error {
 	pa, err := r.da2pa(ctx, a)
 	if err != nil {
 		return err
@@ -168,20 +136,6 @@ func (r *Repo[I, A, D]) Save(ctx context.Context, a A, saveSnapshot bool) error 
 	}
 	if rs.UpsertedCount == 0 && rs.MatchedCount == 0 {
 		return pkgerr.WithStack(dgo.ErrNotMatched)
-	}
-	if saveSnapshot {
-		snapshotID, err := r.getVid(a.ID(), a.Version())
-		if err != nil {
-			return err
-		}
-		ps := r.newSnapshot()
-		ps.SetID(snapshotID)
-		ps.SetSaveAt(a.Now())
-		ps.SetAggregate(pa)
-		_, err = r.snapshot.InsertOne(ctx, ps)
-		if err != nil {
-			return pkgerr.WithStack(err)
-		}
 	}
 	return nil
 }

@@ -18,12 +18,10 @@ type Content[D any] interface {
 	GetCreatedAt() time.Time
 	GetUpdatedAt() time.Time
 	GetVersion() uint64
-	GetSnapshotSaveAt() time.Time
 	GetData() D
 	SetCreatedAt(time.Time)
 	SetUpdatedAt(time.Time)
 	SetVersion(uint64)
-	SetSnapshotSaveAt(time.Time)
 	SetData(D)
 }
 
@@ -49,11 +47,10 @@ func (a *aggregate[I, D]) SetID(id I) {
 }
 
 type DefaultContent[D any] struct {
-	CreatedAt      Time   `bson:"createdAt"`
-	UpdatedAt      Time   `bson:"updatedAt"`
-	Version        uint64 `bson:"version"`
-	Data           D      `bson:",inline"`
-	snapshotSaveAt time.Time
+	CreatedAt Time   `bson:"createdAt"`
+	UpdatedAt Time   `bson:"updatedAt"`
+	Version   uint64 `bson:"version"`
+	Data      D      `bson:",inline"`
 }
 
 func (c *DefaultContent[D]) GetCreatedAt() time.Time {
@@ -78,14 +75,6 @@ func (c *DefaultContent[D]) GetVersion() uint64 {
 
 func (c *DefaultContent[D]) SetVersion(version uint64) {
 	c.Version = version
-}
-
-func (c *DefaultContent[D]) GetSnapshotSaveAt() time.Time {
-	return c.snapshotSaveAt
-}
-
-func (c *DefaultContent[D]) SetSnapshotSaveAt(snapshotSaveAt time.Time) {
-	c.snapshotSaveAt = snapshotSaveAt
 }
 
 func (c *DefaultContent[D]) GetData() D {

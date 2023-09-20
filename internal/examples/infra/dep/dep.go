@@ -4,19 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ekuu/dgo/internal/examples/domain/order"
-
-	dr "github.com/ekuu/dgo/repository"
-
-	"github.com/ekuu/dgo/internal/examples/domain/product"
-
 	"github.com/apache/rocketmq-client-go/v2/consumer"
 	"github.com/apache/rocketmq-client-go/v2/primitive"
 	"github.com/apache/rocketmq-client-go/v2/producer"
 	"github.com/ekuu/dgo"
 	ebrocket "github.com/ekuu/dgo/bus/rocketmq"
 	"github.com/ekuu/dgo/internal/examples/domain/account"
+	"github.com/ekuu/dgo/internal/examples/domain/order"
+	"github.com/ekuu/dgo/internal/examples/domain/product"
 	"github.com/ekuu/dgo/internal/examples/infra/repo/mongo"
+	dr "github.com/ekuu/dgo/repository"
 	mg "go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -56,7 +53,6 @@ func AccountSvc() *dgo.Service[*account.Account] {
 			return account.New(dgo.NewAggBase())
 		},
 		dgo.WithServiceBus[*account.Account](MustBus()),
-		//dgo.WithServiceSnapshotSaveStrategy[*account.Account](dgo.AlwaysSaveSnapshot[*account.Account]),
 		//dgo.WithServiceGenID[*account.Account](func(ctx context.Context) (dgo.ID, error) {
 		//	return repo.NewObjectID().Reverse(), nil
 		//}),

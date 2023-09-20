@@ -33,7 +33,6 @@ type AggBaseSetter[I ID] interface {
 	SetCreatedAt(t time.Time)
 	SetUpdatedAt(t time.Time)
 	SetVersion(version uint64)
-	SetSnapshotSaveAt(snapshotSaveAt time.Time)
 }
 
 type AggBaseGetter[T ID] interface {
@@ -41,7 +40,6 @@ type AggBaseGetter[T ID] interface {
 	GetCreatedAt() time.Time
 	GetUpdatedAt() time.Time
 	GetVersion() uint64
-	GetSnapshotSaveAt() time.Time
 }
 
 // ConvertAggBase 从DomainObject转为PersistenceObject
@@ -64,7 +62,6 @@ func ReverseAggBase[I ID](p AggBaseGetter[I]) dgo.AggBase {
 		dgo.WithAggBaseCreatedAt(p.GetCreatedAt()),
 		dgo.WithAggBaseUpdatedAt(p.GetUpdatedAt()),
 		dgo.WithAggBaseVersion(p.GetVersion()),
-		dgo.WithAggBaseNow(p.GetSnapshotSaveAt()),
 	)
 }
 
@@ -97,13 +94,4 @@ func ConvertEvent[I ID, E Event[I]](de *dgo.Event, newEvent func() E, newVid New
 	re.SetUUID(de.UUID())
 	re.SetPayload(payload)
 	return re, nil
-}
-
-type Snapshot[I ID, A Aggregate[I]] interface {
-	GetID() Vid[I]
-	SetID(Vid[I])
-	GetSaveAt() time.Time
-	SetSaveAt(time.Time)
-	GetAggregate() A
-	SetAggregate(A)
 }

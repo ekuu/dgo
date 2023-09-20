@@ -142,20 +142,3 @@ func (b *aggBase) isActionTarget() {}
 var GenDefaultTopic = func(aggName string) string {
 	return fmt.Sprintf("%sEvent", aggName)
 }
-
-// Snapshot 聚合快照
-type Snapshot[A AggBase] struct {
-	Aggregate A
-	SaveAt    time.Time
-}
-
-// SnapshotSaveStrategy 快照的保存策略
-type SnapshotSaveStrategy[A AggBase] func(A) bool
-
-func AlwaysSaveSnapshot[A AggBase](A) bool {
-	return true
-}
-
-func NeverSaveSnapshot[A AggBase](A) bool {
-	return false
-}

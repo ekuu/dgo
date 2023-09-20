@@ -17,11 +17,10 @@ type ActionTarget interface {
 //
 //go:generate gogen option -n Service -r repo,newAggregate --with-init
 type Service[A AggBase] struct {
-	repo                 Repo[A]
-	bus                  Bus
-	idGenerator          IDGenerator
-	newAggregate         func() A
-	snapshotSaveStrategy SnapshotSaveStrategy[A]
+	repo         Repo[A]
+	bus          Bus
+	idGenerator  IDGenerator
+	newAggregate func() A
 }
 
 func WithServiceIdGenFunc[A AggBase](f func(ctx context.Context) (ID, error)) ServiceOption[A] {
@@ -33,9 +32,6 @@ func WithServiceIdGenFunc[A AggBase](f func(ctx context.Context) (ID, error)) Se
 func (s *Service[A]) init() {
 	if s.idGenerator == nil {
 		s.idGenerator = IDGenFunc(GenNoHyphenUUID)
-	}
-	if s.snapshotSaveStrategy == nil {
-		s.snapshotSaveStrategy = NeverSaveSnapshot[A]
 	}
 }
 
@@ -288,7 +284,7 @@ func (s *Service[A]) executeSaveOne(ctx context.Context, a A) (A, error) {
 		return a, nil
 	}
 	return a, s.executeOne(ctx, a, func(ctx context.Context, r Repo[A]) error {
-		return r.Save(ctx, a, s.snapshotSaveStrategy(a))
+		return r.Save(ctx, a)
 	})
 }
 
@@ -302,8 +298,7 @@ func (s *Service[A]) needTransaction(a A) bool {
 	if _, ok := AggBase(a).(MultiDocuments); ok {
 		return true
 	}
-	// 如果需要保存快照
-	return s.snapshotSaveStrategy(a)
+	return false
 }
 
 // transactionMany 执行多个事件的事务,忽略无payload的事件
@@ -327,7 +322,7 @@ func (s *Service[A]) transactionMany(ctx context.Context, as []A, fn func(contex
 func (s *Service[A]) transactionSaveMany(ctx context.Context, as []A) ([]A, error) {
 	return s.transactionMany(ctx, as, func(ctx context.Context, r Repo[A], as []A) error {
 		for _, a := range as {
-			if err := r.Save(ctx, a, s.snapshotSaveStrategy(a)); err != nil {
+			if err := r.Save(ctx, a); err != nil {
 				return err
 			}
 		}

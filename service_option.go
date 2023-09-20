@@ -79,12 +79,6 @@ func (_o *serviceOptions[A]) IdGenerator(idGenerator IDGenerator) *serviceOption
 	return _o
 }
 
-// SnapshotSaveStrategy snapshotSaveStrategy option of Service
-func (_o *serviceOptions[A]) SnapshotSaveStrategy(snapshotSaveStrategy SnapshotSaveStrategy[A]) *serviceOptions[A] {
-	_o.opts = append(_o.opts, WithServiceSnapshotSaveStrategy[A](snapshotSaveStrategy))
-	return _o
-}
-
 // WithServiceBus bus option of Service
 func WithServiceBus[A AggBase](bus Bus) ServiceOption[A] {
 	return serviceOptionFunc[A](func(_s *Service[A]) {
@@ -99,18 +93,10 @@ func WithServiceIdGenerator[A AggBase](idGenerator IDGenerator) ServiceOption[A]
 	})
 }
 
-// WithServiceSnapshotSaveStrategy snapshotSaveStrategy option of Service
-func WithServiceSnapshotSaveStrategy[A AggBase](snapshotSaveStrategy SnapshotSaveStrategy[A]) ServiceOption[A] {
-	return serviceOptionFunc[A](func(_s *Service[A]) {
-		_s.snapshotSaveStrategy = snapshotSaveStrategy
-	})
-}
-
 func PrintServiceOptions(packageName string) {
 	opts := []string{
 		"WithServiceBus()",
 		"WithServiceIdGenerator()",
-		"WithServiceSnapshotSaveStrategy()",
 	}
 	if packageName == "" {
 		fmt.Printf("opts := []ServiceOption{ \n")
