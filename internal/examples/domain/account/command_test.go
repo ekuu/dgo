@@ -1,4 +1,4 @@
-package app
+package account
 
 import (
 	"context"
@@ -7,64 +7,31 @@ import (
 	"testing"
 	"time"
 
-	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-
+	"github.com/davecgh/go-spew/spew"
+	"github.com/ekuu/dgo"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
-
-	"github.com/davecgh/go-spew/spew"
-
-	"github.com/ekuu/dgo"
-	"github.com/ekuu/dgo/internal/examples/domain/account"
+	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
-func TestTranslate(t *testing.T) {
+func TestCreateCmd_Handle(t *testing.T) {
 	initTracer()
-	initLog()
-	err := Translate(context.Background(), account.NewTransferCmd(dgo.ID("0a8ac46d4b2944898bb6029a1509d3c1"), dgo.ID("649543d698cf4a4fac73356cb1e2a71e"), 1))
-	if err != nil {
-		t.Fatalf("%+v", err)
-	}
-	//time.Sleep(time.Millisecond * 300)
-	time.Sleep(time.Second * 10)
-}
-
-func TestCreateAccount(t *testing.T) {
-	initTracer()
-	initLog()
-	_, err := CreateAccount(context.Background(), &account.CreateCmd{Name: "lisi2", Balance: 0})
-	if err != nil {
-		t.Fatalf("%+v", err)
-	}
-	//spew.Dump(a)
-	//time.Sleep(time.Millisecond * 300)
-	time.Sleep(time.Second * 10)
-}
-
-func TestUpdateAccountName(t *testing.T) {
-	a, err := UpdateAccountName(context.Background(), &account.UpdateNameCmd{
-		ID:   "acc_zhangsan11",
-		Name: "test-name1",
-	})
-	if err != nil {
-		t.Fatalf("%+v", err)
-	}
-	spew.Dump(a)
-	time.Sleep(time.Millisecond * 300)
-}
-
-func initLog() {
 	var handler slog.Handler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		//slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		//AddSource: true,
 		Level: slog.LevelDebug,
 	})
 	slog.SetDefault(slog.New(dgo.TraceSlog(handler)))
+
+	//slog.SetDefault(slog.New(itrace.SlogHandler(slog.Default().Handler())))
+	c := &CreateCmd{Name: "ss", Balance: 100}
+	a, err := dgo.Handle[*Account](context.Background(), c, New(dgo.NewAggBase()))
+	spew.Dump(a, err)
+	//time.Sleep(20 * time.Second)
 }
 
 func initTracer() {
@@ -90,6 +57,7 @@ func initTracer() {
 		trace.WithSpanProcessor(trace.NewBatchSpanProcessor(otlpTraceExporter)),
 	)
 	otel.SetTracerProvider(tp)
+
 }
 
 // newResource returns a resource describing this application.
@@ -98,7 +66,7 @@ func newResource() *resource.Resource {
 		resource.Default(),
 		resource.NewWithAttributes(
 			semconv.SchemaURL,
-			semconv.ServiceName("dgo"),
+			semconv.ServiceName("dgo-test"),
 			//semconv.ServiceVersion("v0.1.0"),
 			//attribute.String("environment", "demo"),
 		),

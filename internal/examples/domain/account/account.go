@@ -1,33 +1,15 @@
 package account
 
 import (
-	"fmt"
-	"log/slog"
-	"os"
-
 	"github.com/ekuu/dgo"
+	"github.com/pkg/errors"
 )
-
-func init() {
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		//slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		//AddSource: true,
-		Level: slog.LevelDebug,
-	})))
-}
 
 //go:generate gogen option -n Account -p _ -r AggBase
 type Account struct {
 	dgo.AggBase
 	name    string
 	balance uint64
-}
-
-func (a *Account) ID() dgo.ID {
-	if a.AggBase.ID().IsEmpty() {
-		return dgo.ID(fmt.Sprintf("acc_%s", a.name))
-	}
-	return a.AggBase.ID()
 }
 
 func (a *Account) Name() string {
@@ -39,6 +21,8 @@ func (a *Account) Balance() uint64 {
 }
 
 func (a *Account) Validate() error {
-	fmt.Println("this is validate")
+	if a.name == "" {
+		return errors.New("账户名不能为空")
+	}
 	return nil
 }

@@ -21,12 +21,12 @@ import (
 func MustBus() dgo.Bus {
 	producerOptions := []producer.Option{
 		producer.WithNameServer([]string{"192.168.31.210:9876"}),
-		producer.WithGroupName(fmt.Sprintf("%s-event-producer", "ddd-test")),
+		producer.WithGroupName(fmt.Sprintf("%s-event-producer", "dgo-test")),
 		producer.WithRetry(2),
 	}
 	consumerOptions := []consumer.Option{
 		consumer.WithNameServer([]string{"192.168.31.210:9876"}),
-		consumer.WithGroupName(fmt.Sprintf("%s-push-consumer", "ddd-test")),
+		consumer.WithGroupName(fmt.Sprintf("%s-push-consumer", "dgo-test")),
 	}
 	eb, err := ebrocket.NewTransactionRocketMQ(producerOptions, consumerOptions, func(ext *primitive.MessageExt) primitive.LocalTransactionState {
 		fmt.Println(ext)
@@ -39,27 +39,27 @@ func MustBus() dgo.Bus {
 }
 
 func MustDB() *mg.Database {
-	client, err := mg.Connect(context.Background(), options.Client().ApplyURI("mongodb://root:123456@192.168.31.210:27017"))
+	client, err := mg.Connect(context.Background(), options.Client().ApplyURI("mongodb://root:123456@localhost:27017"))
 	if err != nil {
 		panic(err)
 	}
-	return client.Database("ddd")
+	return client.Database("dgo")
 }
 
-func AccountSvc() *dgo.Service[*account.Account] {
+func AccountSvc() dgo.Service[*account.Account] {
 	return dgo.NewService[*account.Account](
 		mongo.NewAccountRepo(MustDB()),
 		func() *account.Account {
 			return account.New(dgo.NewAggBase())
 		},
-		dgo.WithServiceBus[*account.Account](MustBus()),
+		//dgo.WithServiceBus[*account.Account](MustBus()),
 		//dgo.WithServiceGenID[*account.Account](func(ctx context.Context) (dgo.ID, error) {
 		//	return repo.NewObjectID().Reverse(), nil
 		//}),
 	)
 }
 
-func ProductSvc() *dgo.Service[*product.Product] {
+func ProductSvc() dgo.Service[*product.Product] {
 	return dgo.NewService[*product.Product](
 		mongo.NewProductRepo(MustDB()),
 		func() *product.Product {
@@ -71,7 +71,7 @@ func ProductSvc() *dgo.Service[*product.Product] {
 	)
 }
 
-func OrderSvc() *dgo.Service[*order.Order] {
+func OrderSvc() dgo.Service[*order.Order] {
 	return dgo.NewService[*order.Order](
 		mongo.NewOrderRepo(MustDB()),
 		func() *order.Order {

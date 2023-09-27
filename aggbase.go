@@ -36,9 +36,8 @@ type aggBase struct {
 	updatedAt    time.Time
 	version      uint64
 	versionDelta uint64
-	// TODO 删除
-	now    time.Time // 若为快照，则now的值应为快照保存的时间
-	events Events
+	now          time.Time
+	events       Events
 }
 
 func (b *aggBase) init() {
