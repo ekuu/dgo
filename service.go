@@ -80,12 +80,11 @@ func (s *service[A]) Create(ctx context.Context, h Handler[A]) (a A, err error) 
 func (s *service[A]) create(ctx context.Context, h Handler[A], a A) (A, error) {
 	a, err := Handle(ctx, h, a)
 	if err != nil {
-		if v, ok := err.(*ErrAggCreated[A]); ok {
-			return v.Aggregate(), nil
-		}
 		return a, err
 	}
-
+	if !a.IsNew() {
+		return a, nil
+	}
 	if a.ID().IsEmpty() {
 		id, err := s.idGenerator.GenID(ctx)
 		if err != nil {
@@ -145,8 +144,8 @@ func (s *service[A]) save(ctx context.Context, h Handler[A], newAgg func() A, t 
 		a = newAgg()
 	}
 	if a.IsNew() {
-		if v, ok := t.(ID); ok && a.ID().IsEmpty() {
-			a.setID(v)
+		if id, ok := t.(ID); ok && a.ID().IsEmpty() {
+			a.setID(id)
 		}
 		return s.create(ctx, h, a)
 	} else {

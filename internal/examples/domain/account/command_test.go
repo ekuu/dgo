@@ -2,8 +2,6 @@ package account
 
 import (
 	"context"
-	"log/slog"
-	"os"
 	"testing"
 	"time"
 
@@ -19,13 +17,13 @@ import (
 )
 
 func TestCreateCmd_Handle(t *testing.T) {
-	initTracer()
-	var handler slog.Handler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		//slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		//AddSource: true,
-		Level: slog.LevelDebug,
-	})
-	slog.SetDefault(slog.New(dgo.TraceSlog(handler)))
+	//initTracer()
+	//var handler slog.Handler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+	//	//slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+	//	//AddSource: true,
+	//	Level: slog.LevelDebug,
+	//})
+	//slog.SetDefault(slog.New(dgo.TraceSlog(handler)))
 
 	//slog.SetDefault(slog.New(itrace.SlogHandler(slog.Default().Handler())))
 	c := &CreateCmd{Name: "ss", Balance: 100}

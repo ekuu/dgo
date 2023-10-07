@@ -7,6 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ekuu/dgo/internal/examples/infra/dep"
+	"github.com/ekuu/dgo/internal/examples/infra/repo/mongo"
+
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 
 	"google.golang.org/grpc"
@@ -35,15 +38,19 @@ func TestTranslate(t *testing.T) {
 }
 
 func TestCreateAccount(t *testing.T) {
-	initTracer()
-	initLog()
-	_, err := CreateAccount(context.Background(), &account.CreateCmd{Name: "lisi2", Balance: 0})
+	//initTracer()
+	//initLog()
+	a, err := CreateAccount(context.Background(), &account.CreateCmd{
+		Name:       "lisi4",
+		Balance:    0,
+		NameExists: mongo.NewAccountRepo(dep.MustDB()).NameExists,
+	})
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
-	//spew.Dump(a)
+	spew.Dump(a)
 	//time.Sleep(time.Millisecond * 300)
-	time.Sleep(time.Second * 10)
+	time.Sleep(time.Second * 1)
 }
 
 func TestUpdateAccountName(t *testing.T) {

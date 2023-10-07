@@ -17,6 +17,7 @@ type AggBase interface {
 	OriginalVersion() uint64
 	IsNew() bool
 	AddEvent(payload proto.Message, opts ...EventOption)
+
 	getEvents() Events
 	tempCleanEvents(fn func(events Events))
 	changed() bool
