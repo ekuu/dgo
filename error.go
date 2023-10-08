@@ -2,6 +2,7 @@ package dgo
 
 import (
 	"errors"
+	"fmt"
 
 	pkgerr "github.com/pkg/errors"
 )
@@ -27,4 +28,20 @@ func IgnoreIDNil(err error) error {
 		return nil
 	}
 	return err
+}
+
+type ErrAggCreated[A AggBase] struct {
+	a A
+}
+
+func NewAggCreated[A AggBase](a A) *ErrAggCreated[A] {
+	return &ErrAggCreated[A]{a: a}
+}
+
+func (e *ErrAggCreated[A]) Error() string {
+	return fmt.Sprintf("aggregate was created, id:%s, createdAt:%s", e.a.ID(), e.a.CreatedAt())
+}
+
+func (e *ErrAggCreated[A]) Aggregate() A {
+	return e.a
 }

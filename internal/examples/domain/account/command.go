@@ -8,32 +8,20 @@ import (
 )
 
 type CreateCmd struct {
-	Name       string
-	Balance    uint64
-	NameExists func(ctx context.Context, name string) (*Account, error)
+	Name    string
+	Balance uint64
 }
 
 func (c *CreateCmd) Handle(ctx context.Context, a *Account) error {
 	a.name = c.Name
 	a.balance = c.Balance
-	if c.NameExists != nil {
-		a2, err := c.NameExists(ctx, c.Name)
-		if err != nil {
-			return err
-		}
-		if a2 != nil {
-			*a = *a2
-			return nil
-		}
-	}
-
-	//a.AddEvent(
-	//	&pb.AccountCreated{
-	//		Name:    c.Name,
-	//		Balance: c.Balance,
-	//	},
-	//	dgo.WithEventName("CreatedAssignedInOption"),
-	//)
+	a.AddEvent(
+		&pb.AccountCreated{
+			Name:    c.Name,
+			Balance: c.Balance,
+		},
+		dgo.WithEventName("CreatedAssignedInOption"),
+	)
 	return nil
 }
 

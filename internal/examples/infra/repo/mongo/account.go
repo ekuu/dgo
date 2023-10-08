@@ -3,8 +3,6 @@ package mongo
 import (
 	"context"
 
-	"go.mongodb.org/mongo-driver/bson"
-
 	"github.com/ekuu/dgo"
 	"github.com/ekuu/dgo/internal/examples/domain/account"
 	dr "github.com/ekuu/dgo/repository"
@@ -48,9 +46,4 @@ func NewAccountRepo(db *mongo.Database) *accountRepo {
 		dm.WithRepoCloseTransaction[dr.String, *account.Account, *accountPO](true),
 	)
 	return &accountRepo{Repo: base}
-}
-
-func (r accountRepo) NameExists(ctx context.Context, name string) (*account.Account, error) {
-	d, err := r.FindDA(ctx, bson.M{"name": name})
-	return d, dgo.IgnoreNotFound(err)
 }
