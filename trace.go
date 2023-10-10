@@ -85,9 +85,10 @@ func (t *serviceTracer[A]) List(ctx context.Context, ids ...ID) ([]A, error) {
 
 }
 
-func (t *serviceTracer[A]) Create(ctx context.Context, h Handler[A]) (a A, err error) {
-	return itrace.Template2(ctx, "service-create", func(ctx context.Context) (A, error) {
-		return t.delegate.Create(ctx, h)
+func (t *serviceTracer[A]) Save(ctx context.Context, h Handler[A], ts ...ActionTarget) (a A, err error) {
+	return itrace.Template2(ctx, "service-save", func(ctx context.Context) (A, error) {
+		trace.SpanFromContext(ctx).SetAttributes(attribute.Int("targets", len(ts)))
+		return t.delegate.Save(ctx, h, ts...)
 	})
 }
 
@@ -97,39 +98,9 @@ func (t *serviceTracer[A]) Delete(ctx context.Context, h Handler[A], target Acti
 	})
 }
 
-func (t *serviceTracer[A]) Update(ctx context.Context, h Handler[A], target ActionTarget) (A, error) {
-	return itrace.Template2(ctx, "service-update", func(ctx context.Context) (A, error) {
-		return t.delegate.Update(ctx, h, target)
-	})
-}
-
-func (t *serviceTracer[A]) Save(ctx context.Context, h Handler[A], target ActionTarget) (a A, err error) {
-	return itrace.Template2(ctx, "service-save", func(ctx context.Context) (A, error) {
-		return t.delegate.Save(ctx, h, target)
-	})
-}
-
-func (t *serviceTracer[A]) BatchCreate(ctx context.Context, h BatchHandler[A]) ([]A, error) {
-	return itrace.Template2(ctx, "service-batch-create", func(ctx context.Context) ([]A, error) {
-		return t.delegate.BatchCreate(ctx, h)
-	})
-}
-
-func (t *serviceTracer[A]) BatchUpdate(ctx context.Context, h BatchHandler[A]) error {
-	return itrace.Template(ctx, "service-batch-update", func(ctx context.Context) error {
-		return t.delegate.BatchUpdate(ctx, h)
-	})
-}
-
-func (t *serviceTracer[A]) BatchSave(ctx context.Context, h BatchHandler[A]) ([]A, error) {
-	return itrace.Template2(ctx, "service-batch-save", func(ctx context.Context) ([]A, error) {
-		return t.delegate.BatchSave(ctx, h)
-	})
-}
-
-func (t *serviceTracer[A]) BatchDelete(ctx context.Context, h BatchHandler[A]) error {
-	return itrace.Template(ctx, "service-batch-delete", func(ctx context.Context) error {
-		return t.delegate.BatchDelete(ctx, h)
+func (t *serviceTracer[A]) Batch(ctx context.Context, entries []*BatchEntry[A]) (as []A, err error) {
+	return itrace.Template2(ctx, "service-batch", func(ctx context.Context) ([]A, error) {
+		return t.delegate.Batch(ctx, entries)
 	})
 }
 

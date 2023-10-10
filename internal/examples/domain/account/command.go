@@ -8,20 +8,31 @@ import (
 )
 
 type CreateCmd struct {
-	Name    string
-	Balance uint64
+	Name       string
+	Balance    uint64
+	NameExists func(ctx context.Context, name string) (*Account, error)
 }
 
 func (c *CreateCmd) Handle(ctx context.Context, a *Account) error {
 	a.name = c.Name
 	a.balance = c.Balance
-	a.AddEvent(
-		&pb.AccountCreated{
-			Name:    c.Name,
-			Balance: c.Balance,
-		},
-		dgo.WithEventName("CreatedAssignedInOption"),
-	)
+	if c.NameExists != nil {
+		a, err := c.NameExists(ctx, c.Name)
+		if err != nil {
+			return err
+		}
+		if a != nil {
+			return dgo.NewDuplicate(a)
+		}
+	}
+
+	//a.AddEvent(
+	//	&pb.AccountCreated{
+	//		Name:    c.Name,
+	//		Balance: c.Balance,
+	//	},
+	//	dgo.WithEventName("CreatedAssignedInOption"),
+	//)
 	return nil
 }
 
@@ -46,24 +57,24 @@ func NewTransferCmd(from dgo.ID, to dgo.ID, amount uint64) *TransferCmd {
 	return &TransferCmd{From: from, To: to, Amount: amount}
 }
 
-func (t TransferCmd) BatchHandle(ctx context.Context) (entries []dgo.BatchEntry[*Account], err error) {
+func (c *TransferCmd) BatchEntries() (entries []*dgo.BatchEntry[*Account]) {
 	entries = append(
 		entries,
-		dgo.NewBatchEntryByFunc(
+		dgo.NewSaveEntryByFunc(
 			func(ctx context.Context, a *Account) error {
-				a.balance -= t.Amount
-				a.AddEvent(&pb.AccountBalanceDecreased{Amount: t.Amount})
+				a.balance -= c.Amount
+				a.AddEvent(&pb.AccountBalanceDecreased{Amount: c.Amount})
 				return nil
 			},
-			t.From,
+			c.From,
 		),
-		dgo.NewBatchEntryByFunc(
+		dgo.NewSaveEntryByFunc(
 			func(ctx context.Context, a *Account) error {
-				a.balance += t.Amount
-				a.AddEvent(&pb.AccountBalanceIncreased{Amount: t.Amount})
+				a.balance += c.Amount
+				a.AddEvent(&pb.AccountBalanceIncreased{Amount: c.Amount})
 				return nil
 			},
-			t.To,
+			c.To,
 		),
 	)
 	return

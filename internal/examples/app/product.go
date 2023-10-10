@@ -13,15 +13,12 @@ import (
 )
 
 func CreateProduct(ctx context.Context, cmd *product.CreateCmd) (*product.Product, error) {
-	return dep.ProductSvc().Create(ctx, cmd)
+	return dep.ProductSvc().Save(ctx, cmd)
 }
 
 func CreateProducts(ctx context.Context, cmds []*product.CreateCmd) ([]*product.Product, error) {
-	h := dgo.NewBatchHandler(func(ctx context.Context) ([]dgo.BatchEntry[*product.Product], error) {
-		entries := lo.Map(cmds, func(item *product.CreateCmd, index int) dgo.BatchEntry[*product.Product] {
-			return dgo.NewBatchEntry[*product.Product](item, nil)
-		})
-		return entries, nil
+	entries := lo.Map(cmds, func(item *product.CreateCmd, index int) *dgo.BatchEntry[*product.Product] {
+		return dgo.NewSaveEntry[*product.Product](item, nil)
 	})
-	return dep.ProductSvc().BatchCreate(ctx, h)
+	return dep.ProductSvc().Batch(ctx, entries)
 }

@@ -6,7 +6,8 @@ import (
 
 // Repo 仓储接口
 type Repo[A AggBase] interface {
-	Get(ctx context.Context, id ID) (A, error) // 当记录不存在时,应调用ErrAggregateNotFound()方法返回错误.
+	// Get 当记录不存在时,应调用返回ErrNotFound.
+	Get(ctx context.Context, id ID) (A, error)
 	List(ctx context.Context, ids ...ID) ([]A, error)
 	Save(ctx context.Context, a A) error
 	Delete(ctx context.Context, a A) error

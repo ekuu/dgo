@@ -6,7 +6,6 @@ import (
 	"github.com/ekuu/dgo/internal"
 	"github.com/ekuu/dgo/pb"
 	pkgerr "github.com/pkg/errors"
-	"github.com/samber/lo"
 )
 
 type ActionTarget interface {
@@ -16,14 +15,11 @@ type ActionTarget interface {
 type Service[A AggBase] interface {
 	Get(ctx context.Context, id ID) (A, error)
 	List(ctx context.Context, ids ...ID) ([]A, error)
-	Create(ctx context.Context, h Handler[A]) (a A, err error)
-	Delete(ctx context.Context, h Handler[A], t ActionTarget) (err error)
-	Update(ctx context.Context, h Handler[A], t ActionTarget) (A, error)
-	Save(ctx context.Context, h Handler[A], t ActionTarget) (a A, err error)
-	BatchCreate(ctx context.Context, h BatchHandler[A]) ([]A, error)
-	BatchUpdate(ctx context.Context, h BatchHandler[A]) error
-	BatchSave(ctx context.Context, h BatchHandler[A]) ([]A, error)
-	BatchDelete(ctx context.Context, h BatchHandler[A]) error
+	Save(ctx context.Context, h Handler[A], ts ...ActionTarget) (A, error)
+	Delete(ctx context.Context, h Handler[A], t ActionTarget) error
+	Batch(ctx context.Context, entries []*BatchEntry[A]) ([]A, error)
+	//Create(ctx context.Context, h Handler[A]) (A, error)
+	//Update(ctx context.Context, h Handler[A], t ActionTarget) (A, error)
 }
 
 func NewService[A AggBase](repo Repo[A], newAggregate func() A, opts ...ServiceOption[A]) Service[A] {
@@ -66,26 +62,57 @@ func (s *service[A]) List(ctx context.Context, ids ...ID) ([]A, error) {
 	return s.repo.List(ctx, ids...)
 }
 
-// Create 处理创建命令
-func (s *service[A]) Create(ctx context.Context, h Handler[A]) (a A, err error) {
-	// create
-	a, err = s.create(ctx, h, s.getAggConstruct(h)())
+// Save 如果targets数量为1，则执行更新操作；为0，执行创建操作；其他情况为错误
+func (s *service[A]) Save(ctx context.Context, h Handler[A], ts ...ActionTarget) (a A, err error) {
+	count := len(ts)
+	if count > 1 {
+		return a, pkgerr.New("action targets too more")
+	}
+
+	var t ActionTarget
+	if count == 1 {
+		t = ts[0]
+	}
+
+	a, err = s.save(ctx, h, t)
 	if err != nil {
 		return a, err
 	}
-	// execute
-	return s.executeSaveOne(ctx, a)
+
+	if !a.changed() {
+		return a, nil
+	}
+
+	return a, s.executeOne(ctx, a, func(ctx context.Context, r Repo[A]) error {
+		return r.Save(ctx, a)
+	})
 }
 
-func (s *service[A]) create(ctx context.Context, h Handler[A], a A) (A, error) {
-	a, err := Handle(ctx, h, a)
+func (s *service[A]) save(ctx context.Context, h Handler[A], t ActionTarget) (a A, err error) {
+	if t != nil {
+		return s.update(ctx, h, t)
+	}
+	return s.create(ctx, h)
+}
+
+func (s *service[A]) create(ctx context.Context, h Handler[A]) (a A, err error) {
+	// 初始化一个Aggregate对象
+	if v, ok := h.(AggConstructor[A]); ok {
+		a = v.NewAggregate()
+	} else {
+		a = s.newAggregate()
+	}
+
+	// 处理Handler
+	a, err = handle(ctx, h, a)
 	if err != nil {
-		if v, ok := err.(*ErrAggCreated[A]); ok {
+		if v, ok := err.(*ErrDuplicate[A]); ok {
 			return v.Aggregate(), nil
 		}
 		return a, err
 	}
 
+	// 生成一个id
 	if a.ID().IsEmpty() {
 		id, err := s.idGenerator.GenID(ctx)
 		if err != nil {
@@ -96,14 +123,17 @@ func (s *service[A]) create(ctx context.Context, h Handler[A], a A) (A, error) {
 	return a, nil
 }
 
-// Delete 处理删除命令
-func (s *service[A]) Delete(ctx context.Context, h Handler[A], t ActionTarget) (err error) {
+func (s *service[A]) update(ctx context.Context, h Handler[A], t ActionTarget) (A, error) {
 	a, err := s.getAggFromTarget(ctx, t)
-	if err = IgnoreNotFound(err); err != nil {
-		return err
+	if err != nil {
+		return a, err
 	}
+	return handle(ctx, newUpdateHandler(h), a)
+}
 
-	a, err = Handle(ctx, h, a)
+// Delete 处理删除命令
+func (s *service[A]) Delete(ctx context.Context, h Handler[A], t ActionTarget) error {
+	a, err := s.delete(ctx, h, t)
 	if err != nil {
 		return err
 	}
@@ -113,127 +143,106 @@ func (s *service[A]) Delete(ctx context.Context, h Handler[A], t ActionTarget) (
 	})
 }
 
-// Update 处理更新命令
-func (s *service[A]) Update(ctx context.Context, h Handler[A], t ActionTarget) (A, error) {
-	a, err := s.getAggFromTarget(ctx, t)
-	if err != nil {
+func (s *service[A]) delete(ctx context.Context, h Handler[A], t ActionTarget) (a A, err error) {
+	a, err = s.getAggFromTarget(ctx, t)
+	if err = IgnoreNotFound(err); err != nil {
 		return a, err
 	}
-
-	a, err = Handle(ctx, h, a)
-	if err != nil {
-		return a, err
-	}
-	return s.executeSaveOne(ctx, a)
+	return handle(ctx, h, a)
 }
 
-// Save 聚合存在则更新，不存在则创建
-func (s *service[A]) Save(ctx context.Context, h Handler[A], t ActionTarget) (a A, err error) {
-	a, err = s.save(ctx, h, s.getAggConstruct(h), t)
-	if err != nil {
-		return a, err
+func (s *service[A]) Batch(ctx context.Context, entries []*BatchEntry[A]) (as []A, err error) {
+	m := map[ActionType]func(context.Context, Handler[A], ActionTarget) (A, error){
+		ActionSave:   s.save,
+		ActionDelete: s.delete,
 	}
-	return s.executeSaveOne(ctx, a)
-}
 
-func (s *service[A]) save(ctx context.Context, h Handler[A], newAgg func() A, t ActionTarget) (A, error) {
-	a, err := s.getAggFromTarget(ctx, t)
-	if err = IgnoreIDNil(IgnoreNotFound(err)); err != nil {
-		return a, err
-	}
-	if internal.InterfaceValNil(a) {
-		a = newAgg()
-	}
-	if a.IsNew() {
-		if v, ok := t.(ID); ok && a.ID().IsEmpty() {
-			a.setID(v)
+	// 检查ActionType
+	for _, v := range entries {
+		if _, ok := m[v.ActionType]; !ok {
+			return nil, pkgerr.New("action type error")
 		}
-		return s.create(ctx, h, a)
-	} else {
-		return Handle(ctx, h, a)
 	}
-}
 
-func (s *service[A]) handleBatchSave(ctx context.Context, h BatchHandler[A], iterate func(context.Context, BatchEntry[A]) (A, error)) ([]A, error) {
-	as, err := HandleBatch[A](ctx, h, iterate)
-	if err != nil || len(as) == 0 {
-		return nil, err
-	}
-	return s.transactionSaveMany(ctx, as)
-}
-
-// BatchCreate 创建多个聚合
-// 创建在数据库中不存在的聚合，如果已存在于数据库中（如聚合中的某些字段对应为数据库唯一索引）则返回命中的数据
-func (s *service[A]) BatchCreate(ctx context.Context, h BatchHandler[A]) ([]A, error) {
-	return s.handleBatchSave(
-		ctx,
-		h,
-		func(ctx context.Context, e BatchEntry[A]) (a A, err error) {
-			if t := e.ActionTarget(); t != nil {
-				var ok bool
-				if a, ok = t.(A); !ok {
-					a = s.getAggConstruct(h)()
-					a.setID(t.(ID))
-				}
-			} else {
-				a = s.getAggConstruct(h)()
-			}
-			return s.create(ctx, e.Handler(), a)
-		},
-	)
-}
-
-// BatchUpdate 保存多个聚合
-func (s *service[A]) BatchUpdate(ctx context.Context, h BatchHandler[A]) error {
-	_, err := s.handleBatchSave(
-		ctx,
-		h,
-		func(ctx context.Context, e BatchEntry[A]) (A, error) {
-			a, err := s.getAggFromTarget(ctx, e.ActionTarget())
-			if err != nil {
-				return a, err
-			}
-			return Handle(ctx, e.Handler(), a)
-		},
-	)
-	return err
-}
-
-// BatchSave 保存多个聚合
-func (s *service[A]) BatchSave(ctx context.Context, h BatchHandler[A]) ([]A, error) {
-	return s.handleBatchSave(
-		ctx,
-		h,
-		func(ctx context.Context, e BatchEntry[A]) (A, error) {
-			return s.save(ctx, e.Handler(), s.getAggConstruct(h), e.ActionTarget())
-		},
-	)
-}
-
-// BatchDelete 删除多个聚合
-func (s *service[A]) BatchDelete(ctx context.Context, h BatchHandler[A]) error {
-	iterate := func(ctx context.Context, e BatchEntry[A]) (A, error) {
-		a, err := s.getAggFromTarget(ctx, e.ActionTarget())
+	var es Events
+	var fns []func(context.Context, Repo[A]) error
+	for _, e := range entries {
+		// 根据ActionType执行对应的Handler
+		a, err := m[e.ActionType](ctx, e.Handler, e.ActionTarget)
 		if err != nil {
-			return a, IgnoreNotFound(err)
+			return nil, err
 		}
-		return Handle(ctx, e.Handler(), a)
+		as = append(as, a)
+
+		// 聚合内容是否发生了变化
+		if !a.changed() {
+			continue
+		}
+
+		// 合并事件
+		es = append(es, a.getEvents()...)
+
+		if e.ActionType == ActionDelete {
+			fns = append(fns, func(ctx context.Context, r Repo[A]) error {
+				return r.Delete(ctx, a)
+			})
+		} else {
+			fns = append(fns, func(ctx context.Context, r Repo[A]) error {
+				return r.Save(ctx, a)
+			})
+		}
+	}
+	if len(fns) == 0 {
+		return as, nil
 	}
 
-	es, err := HandleBatch[A](ctx, h, iterate)
-	if err != nil || len(es) == 0 {
-		return err
-	}
-
-	_, err = s.transactionMany(ctx, es, func(ctx context.Context, r Repo[A], as []A) error {
-		for _, a := range as {
-			if err := r.Delete(ctx, a); err != nil {
+	// execute in transaction
+	return as, s.transaction(ctx, es, func(ctx context.Context, r Repo[A]) error {
+		for _, fn := range fns {
+			if err = fn(ctx, r); err != nil {
 				return err
 			}
 		}
 		return nil
 	})
-	return err
+}
+
+type ActionType int
+
+const (
+	ActionSave ActionType = iota + 1
+	ActionDelete
+)
+
+// BatchEntry 批量命令返回条目
+type BatchEntry[A AggBase] struct {
+	Handler      Handler[A]
+	ActionType   ActionType
+	ActionTarget ActionTarget
+}
+
+func NewBatchEntry[A AggBase](handler Handler[A], actionType ActionType, actionTarget ActionTarget) *BatchEntry[A] {
+	return &BatchEntry[A]{Handler: handler, ActionType: actionType, ActionTarget: actionTarget}
+}
+
+func NewSaveEntry[A AggBase](handler Handler[A], actionTarget ActionTarget) *BatchEntry[A] {
+	return NewBatchEntry(handler, ActionSave, actionTarget)
+}
+
+func NewDeleteEntry[A AggBase](handler Handler[A], actionTarget ActionTarget) *BatchEntry[A] {
+	return NewBatchEntry(handler, ActionDelete, actionTarget)
+}
+
+func NewBatchEntryByFunc[A AggBase](hf func(context.Context, A) error, actionType ActionType, actionTarget ActionTarget) *BatchEntry[A] {
+	return &BatchEntry[A]{Handler: HandlerFunc[A](hf), ActionType: actionType, ActionTarget: actionTarget}
+}
+
+func NewSaveEntryByFunc[A AggBase](hf func(context.Context, A) error, actionTarget ActionTarget) *BatchEntry[A] {
+	return NewBatchEntryByFunc(hf, ActionSave, actionTarget)
+}
+
+func NewDeleteEntryByFunc[A AggBase](hf func(context.Context, A) error, actionTarget ActionTarget) *BatchEntry[A] {
+	return NewBatchEntryByFunc(hf, ActionDelete, actionTarget)
 }
 
 func (s *service[A]) getAggFromTarget(ctx context.Context, t ActionTarget) (a A, err error) {
@@ -249,13 +258,6 @@ func (s *service[A]) getAggFromTarget(ctx context.Context, t ActionTarget) (a A,
 		}
 	}
 	return
-}
-
-func (s *service[A]) getAggConstruct(h any) func() A {
-	if v, ok := h.(AggConstructor[A]); ok {
-		return v.NewAggregate
-	}
-	return s.newAggregate
 }
 
 // transaction 事务
@@ -302,16 +304,6 @@ func (s *service[A]) executeOne(ctx context.Context, a A, fn func(ctx context.Co
 	return traceExecuteCallback(fn)(ctx, s.repo)
 }
 
-// executeSaveOne 执行聚合的保存动作
-func (s *service[A]) executeSaveOne(ctx context.Context, a A) (A, error) {
-	if !a.changed() {
-		return a, nil
-	}
-	return a, s.executeOne(ctx, a, func(ctx context.Context, r Repo[A]) error {
-		return r.Save(ctx, a)
-	})
-}
-
 // needTransaction 判断是否需要开启事务
 func (s *service[A]) needTransaction(a A) bool {
 	// 有事件产生
@@ -325,31 +317,33 @@ func (s *service[A]) needTransaction(a A) bool {
 	return false
 }
 
-// transactionMany 执行多个事件的事务,忽略无payload的事件
-func (s *service[A]) transactionMany(ctx context.Context, as []A, fn func(context.Context, Repo[A], []A) error) ([]A, error) {
-	changedAggregates := lo.Filter(as, func(a A, index int) bool {
-		return a.changed()
-	})
-	if len(as) == 0 {
-		return as, nil
-	}
-	var es Events
-	for _, a := range changedAggregates {
-		es = append(es, a.getEvents()...)
-	}
-	return as, s.transaction(ctx, es, func(ctx context.Context, r Repo[A]) error {
-		return fn(ctx, r, as)
-	})
-}
+//
+//type BatchOptions struct {
+//	transaction bool
+//	parallel    bool // todo 批量并行
+//	//continueWhenError bool
+//}
+//
+//func WithBatchTransaction(transaction bool) func(o *BatchOptions) {
+//	return func(o *BatchOptions) {
+//		o.transaction = transaction
+//	}
+//}
+//
+//func WithBatchTransactionOff() func(o *BatchOptions) {
+//	return func(o *BatchOptions) {
+//		o.transaction = false
+//	}
+//}
 
-// transactionSaveMany 执行多个事件及聚合保存动作的事务
-func (s *service[A]) transactionSaveMany(ctx context.Context, as []A) ([]A, error) {
-	return s.transactionMany(ctx, as, func(ctx context.Context, r Repo[A], as []A) error {
-		for _, a := range as {
-			if err := r.Save(ctx, a); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}
+//	func WithBatchContinueWhenError(continueWhenError bool) func(o *BatchOptions) {
+//		return func(o *BatchOptions) {
+//			o.continueWhenError = continueWhenError
+//		}
+//	}
+//
+//	func WithBatchReturnWhenError() func(o *BatchOptions) {
+//		return func(o *BatchOptions) {
+//			o.continueWhenError = false
+//		}
+//	}

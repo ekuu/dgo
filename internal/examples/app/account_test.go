@@ -7,6 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ekuu/dgo/internal/examples/infra/dep"
+	"github.com/ekuu/dgo/internal/examples/infra/repo/mongo"
+
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 
 	"google.golang.org/grpc"
@@ -24,26 +27,34 @@ import (
 )
 
 func TestTranslate(t *testing.T) {
-	initTracer()
-	initLog()
+	//initTracer()
+	//initLog()
 	err := Translate(context.Background(), account.NewTransferCmd(dgo.ID("0a8ac46d4b2944898bb6029a1509d3c1"), dgo.ID("649543d698cf4a4fac73356cb1e2a71e"), 1))
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
-	//time.Sleep(time.Millisecond * 300)
-	time.Sleep(time.Second * 10)
+	time.Sleep(time.Millisecond * 300)
+	//time.Sleep(time.Second * 10)
 }
 
 func TestCreateAccount(t *testing.T) {
-	initTracer()
-	initLog()
-	_, err := CreateAccount(context.Background(), &account.CreateCmd{Name: "lisi2", Balance: 0})
+	//initTracer()
+	//initLog()
+	rs, err := CreateAccount(context.Background(), &account.CreateCmd{
+		Name:       "lisi4",
+		Balance:    0,
+		NameExists: mongo.NewAccountRepo(dep.MustDB()).NameExists,
+	})
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
-	//spew.Dump(a)
+	//_, err := CreateAccount(context.Background(), &account.CreateCmd{Name: "lisi2", Balance: 0})
+	//if err != nil {
+	//	t.Fatalf("%+v", err)
+	//}
+	spew.Dump(rs)
 	//time.Sleep(time.Millisecond * 300)
-	time.Sleep(time.Second * 10)
+	//time.Sleep(time.Second * 1)
 }
 
 func TestUpdateAccountName(t *testing.T) {

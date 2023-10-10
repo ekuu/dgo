@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/ekuu/dgo"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -28,9 +27,9 @@ func TestCreateCmd_Handle(t *testing.T) {
 	slog.SetDefault(slog.New(dgo.TraceSlog(handler)))
 
 	//slog.SetDefault(slog.New(itrace.SlogHandler(slog.Default().Handler())))
-	c := &CreateCmd{Name: "ss", Balance: 100}
-	a, err := dgo.Handle[*Account](context.Background(), c, New(dgo.NewAggBase()))
-	spew.Dump(a, err)
+	//c := &CreateCmd{Name: "ss", Balance: 100}
+	//a, err := dgo.handle[*Account](context.Background(), c, New(dgo.NewAggBase()))
+	//spew.Dump(a, err)
 	//time.Sleep(20 * time.Second)
 }
 

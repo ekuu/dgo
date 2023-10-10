@@ -27,7 +27,8 @@ func NewHandler[A AggBase](hf func(context.Context, A) error) Handler[A] {
 	return HandlerFunc[A](hf)
 }
 
-func Handle[A AggBase](ctx context.Context, h Handler[A], a A) (A, error) {
+// handle 执行Handler接口的Handle函数
+func handle[A AggBase](ctx context.Context, h Handler[A], a A) (A, error) {
 	if internal.InterfaceValNil(a) {
 		return a, pkgerr.New("aggregate is nil")
 	}
@@ -37,35 +38,8 @@ func Handle[A AggBase](ctx context.Context, h Handler[A], a A) (A, error) {
 
 	slog.InfoContext(ctx, "handle start", slog.Bool("isNew", a.IsNew()), slog.Group("agg", "id", a.ID(), "name", getAggName(a), "version", a.Version(), "createdAt", a.CreatedAt(), "updatedAt", a.UpdatedAt()))
 
-	// 是否是新创建的聚合
-	if a.IsNew() {
-		if err := h.Handle(ctx, a); err != nil {
-			return a, err
-		}
-	} else {
-		cloned := clone.Clone(a)
-		if err := h.Handle(ctx, a); err != nil {
-			return a, err
-		}
-
-		var equals bool
-		var attrs []any
-
-		a.tempCleanEvents(func(events Events) {
-			// 事件个数小于等于1的时候比较聚合的内容是否发生了变化
-			attrs = append(attrs, slog.Int("eventCount", len(events)))
-			if len(events) <= 1 {
-				equals = reflect.DeepEqual(a, cloned)
-			}
-		})
-
-		slog.DebugContext(ctx, "aggregate changed", append(attrs, slog.Bool("changed", !equals))...)
-
-		if equals {
-			return a, nil
-		} else {
-			a.setUpdatedAt()
-		}
+	if err := h.Handle(ctx, a); err != nil {
+		return a, err
 	}
 
 	// 验证
@@ -83,69 +57,45 @@ func Handle[A AggBase](ctx context.Context, h Handler[A], a A) (A, error) {
 	}
 
 	// 补充事件属性
-	a.completeEvents(a)
+	a.base().completeEvents(a)
 	// 更新版本
 	if !a.changed() {
-		a.incrVersion()
+		a.base().incrVersion()
 	}
 	return a, nil
 }
 
-// BatchHandler 批量处理接口
-type BatchHandler[A AggBase] interface {
-	BatchHandle(ctx context.Context) ([]BatchEntry[A], error)
+// updateHandler 对更新操作前后内容进行对比
+type updateHandler[A AggBase] struct {
+	Handler[A]
 }
 
-type BatchHandlerFunc[A AggBase] func(ctx context.Context) ([]BatchEntry[A], error)
-
-func (f BatchHandlerFunc[A]) BatchHandle(ctx context.Context) ([]BatchEntry[A], error) {
-	return f(ctx)
+func newUpdateHandler[A AggBase](h Handler[A]) Handler[A] {
+	return &updateHandler[A]{Handler: h}
 }
 
-func NewBatchHandler[A AggBase](f func(ctx context.Context) ([]BatchEntry[A], error)) BatchHandler[A] {
-	return BatchHandlerFunc[A](f)
-}
-
-// BatchEntry 批量命令返回条目
-type BatchEntry[A AggBase] interface {
-	Handler() Handler[A]
-	ActionTarget() ActionTarget
-}
-
-// BatchEntry 批量命令返回条目
-type batchEntry[A AggBase] struct {
-	handler      Handler[A]
-	actionTarget ActionTarget
-}
-
-func NewBatchEntry[A AggBase](handler Handler[A], target ActionTarget) *batchEntry[A] {
-	return &batchEntry[A]{handler: handler, actionTarget: target}
-}
-
-func NewBatchEntryByFunc[A AggBase](hf func(ctx context.Context, a A) error, target ActionTarget) *batchEntry[A] {
-	return NewBatchEntry[A](HandlerFunc[A](hf), target)
-}
-
-func (b batchEntry[A]) Handler() Handler[A] {
-	return b.handler
-}
-
-func (b batchEntry[A]) ActionTarget() ActionTarget {
-	return b.actionTarget
-}
-
-func HandleBatch[A AggBase](ctx context.Context, h BatchHandler[A], iterate func(context.Context, BatchEntry[A]) (A, error)) (as []A, err error) {
-	ctx, span := itrace.Start(ctx, "batch-handle")
-	defer span.End()
-
-	entries, err := h.BatchHandle(ctx)
-	if err != nil || len(entries) == 0 {
-		return nil, err
+func (h updateHandler[A]) Handle(ctx context.Context, a A) error {
+	cloned := clone.Clone(a)
+	if err := h.Handler.Handle(ctx, a); err != nil {
+		return err
 	}
-	if v, ok := h.(DryRunner); ok && v.DryRun() {
-		return nil, nil
-	}
-	return internal.MapError(entries, func(i int, entry BatchEntry[A]) (A, error) {
-		return iterate(ctx, entry)
+
+	diff := true
+	var attrs []any
+
+	a.base().tempCleanEvents(func(events Events) {
+		// 事件个数小于等于1的时候比较聚合的内容是否发生了变化
+		attrs = append(attrs, slog.Int("eventCount", len(events)))
+		if len(events) <= 1 {
+			diff = !reflect.DeepEqual(a, cloned)
+		}
 	})
+
+	slog.DebugContext(ctx, "aggregate changed", append(attrs, slog.Bool("changed", diff))...)
+
+	if diff {
+		a.base().setUpdatedAtNow()
+	}
+
+	return nil
 }

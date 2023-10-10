@@ -17,14 +17,12 @@ type AggBase interface {
 	OriginalVersion() uint64
 	IsNew() bool
 	AddEvent(payload proto.Message, opts ...EventOption)
-	getEvents() Events
-	tempCleanEvents(fn func(events Events))
-	changed() bool
+
+	base() *aggBase
 	setID(id ID)
-	setUpdatedAt()
-	incrVersion() uint64
-	completeEvents(v any)
+	changed() bool
 	isActionTarget()
+	getEvents() Events
 }
 
 // aggBase 定义聚合通用的基础信息
@@ -53,8 +51,19 @@ func (b *aggBase) init() {
 	}
 }
 
+func (b *aggBase) base() *aggBase {
+	return b
+}
+
 func (b *aggBase) ID() ID {
 	return b.id
+}
+
+func (b *aggBase) setID(id ID) {
+	b.id = id
+	for i, _ := range b.events {
+		b.events[i].aggID = id
+	}
 }
 
 func (b *aggBase) Now() time.Time {
@@ -102,14 +111,7 @@ func (b *aggBase) changed() bool {
 	return b.OriginalVersion() != b.Version()
 }
 
-func (b *aggBase) setID(id ID) {
-	b.id = id
-	for i, _ := range b.events {
-		b.events[i].aggID = id
-	}
-}
-
-func (b *aggBase) setUpdatedAt() {
+func (b *aggBase) setUpdatedAtNow() {
 	b.updatedAt = b.Now()
 }
 

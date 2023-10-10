@@ -30,18 +30,18 @@ func IgnoreIDNil(err error) error {
 	return err
 }
 
-type ErrAggCreated[A AggBase] struct {
+type ErrDuplicate[A AggBase] struct {
 	a A
 }
 
-func NewAggCreated[A AggBase](a A) *ErrAggCreated[A] {
-	return &ErrAggCreated[A]{a: a}
+func NewDuplicate[A AggBase](a A) *ErrDuplicate[A] {
+	return &ErrDuplicate[A]{a: a}
 }
 
-func (e *ErrAggCreated[A]) Error() string {
-	return fmt.Sprintf("aggregate was created, id:%s, createdAt:%s", e.a.ID(), e.a.CreatedAt())
+func (e *ErrDuplicate[A]) Error() string {
+	return fmt.Sprintf("aggregate duplicate, id:%s, createdAt:%s", e.a.ID(), e.a.CreatedAt())
 }
 
-func (e *ErrAggCreated[A]) Aggregate() A {
+func (e *ErrDuplicate[A]) Aggregate() A {
 	return e.a
 }
