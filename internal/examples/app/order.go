@@ -37,5 +37,5 @@ func CreateOrder(ctx context.Context, pairs []lo.Entry[dgo.ID, uint32], off uint
 	)
 
 	// 创建订单
-	return dep.OrderSvc().Save(ctx, &order.CreateCmd{Items: items, Off: off})
+	return dep.OrderSvc().Create(ctx, &order.CreateCmd{Items: items, Off: off})
 }

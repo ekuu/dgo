@@ -60,8 +60,9 @@ func TestCreateAccount(t *testing.T) {
 func TestUpdateAccountName(t *testing.T) {
 	initLog()
 	a, err := UpdateAccountName(context.Background(), &account.UpdateNameCmd{
-		ID:   "e9198660e51140ad8c94b695ca43f90c",
-		Name: "test-name2",
+		ID: "e9198660e51140ad8c94b695ca43f9c",
+		//ID:   "e9198660e51140ad8c94b695ca43f90c",
+		Name: "test-name4",
 	})
 	if err != nil {
 		t.Fatalf("%+v", err)

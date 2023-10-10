@@ -60,20 +60,22 @@ func NewTransferCmd(from dgo.ID, to dgo.ID, amount uint64) *TransferCmd {
 func (c *TransferCmd) BatchEntries() (entries []*dgo.BatchEntry[*Account]) {
 	entries = append(
 		entries,
-		dgo.NewSaveEntryByFunc(
+		dgo.NewBatchEntryByFunc(
 			func(ctx context.Context, a *Account) error {
 				a.balance -= c.Amount
 				a.AddEvent(&pb.AccountBalanceDecreased{Amount: c.Amount})
 				return nil
 			},
+			dgo.ActionUpdate,
 			c.From,
 		),
-		dgo.NewSaveEntryByFunc(
+		dgo.NewBatchEntryByFunc(
 			func(ctx context.Context, a *Account) error {
 				a.balance += c.Amount
 				a.AddEvent(&pb.AccountBalanceIncreased{Amount: c.Amount})
 				return nil
 			},
+			dgo.ActionUpdate,
 			c.To,
 		),
 	)

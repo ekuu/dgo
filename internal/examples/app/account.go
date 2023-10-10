@@ -36,10 +36,10 @@ func Translate(ctx context.Context, cmd *account.TransferCmd) error {
 }
 
 func CreateAccount(ctx context.Context, cmd *account.CreateCmd) (*account.Account, error) {
-	return dep.AccountSvc().Save(ctx, cmd)
+	return dep.AccountSvc().Create(ctx, cmd)
 	//return dep.AccountSvc().Save(context.Background(), cmd, dgo.ID("wangwu"))
 }
 
 func UpdateAccountName(ctx context.Context, cmd *account.UpdateNameCmd) (*account.Account, error) {
-	return dep.AccountSvc().Save(ctx, cmd, cmd.ID)
+	return dep.AccountSvc().Update(ctx, cmd, cmd.ID)
 }
