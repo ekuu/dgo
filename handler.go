@@ -91,7 +91,7 @@ func (h updateHandler[A]) Handle(ctx context.Context, a A) error {
 		}
 	})
 
-	slog.DebugContext(ctx, "aggregate changed", append(attrs, slog.Bool("changed", diff))...)
+	slog.DebugContext(ctx, "update aggregate", append(attrs, slog.Bool("changed", diff))...)
 
 	if diff {
 		a.base().setUpdatedAtNow()
