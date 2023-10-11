@@ -19,7 +19,7 @@ type Service[A AggBase] interface {
 	Delete(ctx context.Context, h Handler[A], t ActionTarget) error
 	Update(ctx context.Context, h Handler[A], t ActionTarget) (A, error)
 	Save(ctx context.Context, h Handler[A], t ActionTarget) (A, error)
-	Batch(ctx context.Context, entries []*BatchEntry[A]) ([]A, error)
+	Batch(ctx context.Context, entries []*BatchEntry[A], opts ...BatchOption) ([]A, error)
 }
 
 func NewService[A AggBase](repo Repo[A], newAggregate func() A, opts ...ServiceOption[A]) Service[A] {
@@ -160,7 +160,9 @@ func (s *service[A]) save(ctx context.Context, h Handler[A], t ActionTarget) (a 
 	}
 }
 
-func (s *service[A]) Batch(ctx context.Context, entries []*BatchEntry[A]) (as []A, err error) {
+func (s *service[A]) Batch(ctx context.Context, entries []*BatchEntry[A], opts ...BatchOption) (as []A, err error) {
+
+	// TODO Option
 
 	m := map[ActionType]func(context.Context, *BatchEntry[A]) (A, error){
 		ActionCreate: func(ctx context.Context, e *BatchEntry[A]) (A, error) {
@@ -224,30 +226,6 @@ func (s *service[A]) Batch(ctx context.Context, entries []*BatchEntry[A]) (as []
 		}
 		return nil
 	})
-}
-
-type ActionType int
-
-const (
-	ActionCreate ActionType = iota + 1
-	ActionUpdate
-	ActionSave
-	ActionDelete
-)
-
-// BatchEntry 批量命令返回条目
-type BatchEntry[A AggBase] struct {
-	Handler      Handler[A]
-	ActionType   ActionType
-	ActionTarget ActionTarget
-}
-
-func NewBatchEntry[A AggBase](handler Handler[A], actionType ActionType, actionTarget ActionTarget) *BatchEntry[A] {
-	return &BatchEntry[A]{Handler: handler, ActionType: actionType, ActionTarget: actionTarget}
-}
-
-func NewBatchEntryByFunc[A AggBase](hf func(context.Context, A) error, actionType ActionType, actionTarget ActionTarget) *BatchEntry[A] {
-	return &BatchEntry[A]{Handler: HandlerFunc[A](hf), ActionType: actionType, ActionTarget: actionTarget}
 }
 
 func (s *service[A]) getAggFromTarget(ctx context.Context, t ActionTarget) (a A, err error) {
@@ -338,33 +316,58 @@ func (s *service[A]) needTransaction(a A) bool {
 	return false
 }
 
-//
-//type BatchOptions struct {
-//	transaction bool
-//	parallel    bool // todo 批量并行
-//	//continueWhenError bool
-//}
-//
-//func WithBatchTransaction(transaction bool) func(o *BatchOptions) {
-//	return func(o *BatchOptions) {
-//		o.transaction = transaction
-//	}
-//}
-//
-//func WithBatchTransactionOff() func(o *BatchOptions) {
-//	return func(o *BatchOptions) {
-//		o.transaction = false
-//	}
-//}
+type ActionType int
 
-//	func WithBatchContinueWhenError(continueWhenError bool) func(o *BatchOptions) {
-//		return func(o *BatchOptions) {
-//			o.continueWhenError = continueWhenError
-//		}
-//	}
+const (
+	ActionCreate ActionType = iota + 1
+	ActionUpdate
+	ActionSave
+	ActionDelete
+)
+
+// BatchEntry 批量命令返回条目
+type BatchEntry[A AggBase] struct {
+	Handler      Handler[A]
+	ActionType   ActionType
+	ActionTarget ActionTarget
+}
+
+func NewBatchEntry[A AggBase](handler Handler[A], actionType ActionType, actionTarget ActionTarget) *BatchEntry[A] {
+	return &BatchEntry[A]{Handler: handler, ActionType: actionType, ActionTarget: actionTarget}
+}
+
+func NewBatchEntryByFunc[A AggBase](hf func(context.Context, A) error, actionType ActionType, actionTarget ActionTarget) *BatchEntry[A] {
+	return &BatchEntry[A]{Handler: HandlerFunc[A](hf), ActionType: actionType, ActionTarget: actionTarget}
+}
+
+type batchOptions struct {
+	transaction bool
+	//parallel    bool // todo 批量并行
+	//continueWhenError bool
+}
+type BatchOption func(o *batchOptions)
+
+func WithBatchTransaction(transaction bool) func(o *batchOptions) {
+	return func(o *batchOptions) {
+		o.transaction = transaction
+	}
+}
+
+func WithBatchTransactionOff() func(o *batchOptions) {
+	return func(o *batchOptions) {
+		o.transaction = false
+	}
+}
+
 //
-//	func WithBatchReturnWhenError() func(o *BatchOptions) {
-//		return func(o *BatchOptions) {
-//			o.continueWhenError = false
-//		}
+//func WithBatchContinueWhenError(continueWhenError bool) func(o *batchOptions) {
+//	return func(o *batchOptions) {
+//		o.continueWhenError = continueWhenError
 //	}
+//}
+//
+//func WithBatchReturnWhenError() func(o *batchOptions) {
+//	return func(o *batchOptions) {
+//		o.continueWhenError = false
+//	}
+//}

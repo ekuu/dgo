@@ -110,9 +110,9 @@ func (t *serviceTracer[A]) Save(ctx context.Context, h Handler[A], target Action
 	})
 }
 
-func (t *serviceTracer[A]) Batch(ctx context.Context, entries []*BatchEntry[A]) ([]A, error) {
+func (t *serviceTracer[A]) Batch(ctx context.Context, entries []*BatchEntry[A], opts ...BatchOption) ([]A, error) {
 	return itrace.Template2(ctx, "service-batch", func(ctx context.Context) ([]A, error) {
-		return t.delegate.Batch(ctx, entries)
+		return t.delegate.Batch(ctx, entries, opts...)
 	})
 }
 
