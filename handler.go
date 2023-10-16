@@ -58,10 +58,6 @@ func handle[A AggBase](ctx context.Context, h Handler[A], a A) (A, error) {
 
 	// 补充事件属性
 	a.base().completeEvents(a)
-	// 更新版本
-	if !a.changed() {
-		a.base().incrVersion()
-	}
 	return a, nil
 }
 

@@ -120,13 +120,16 @@ func (b *aggBase) incrVersion() uint64 {
 	return b.Version()
 }
 
-func (b *aggBase) completeEvents(v any) {
+func (b *aggBase) completeEvents(a AggBase) {
 	if len(b.events) == 0 {
+		if a.IsNew() || a.changed() {
+			a.base().incrVersion()
+		}
 		return
 	}
-	aggName := getAggName(v)
+	aggName := getAggName(a)
 	topic := GenDefaultTopic(aggName)
-	if t := getTopicName(v); t != "" {
+	if t := getTopicName(a); t != "" {
 		topic = t
 	}
 	for i, e := range b.events {
