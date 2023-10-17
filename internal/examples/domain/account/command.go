@@ -43,7 +43,7 @@ type UpdateNameCmd struct {
 
 func (c UpdateNameCmd) Handle(ctx context.Context, a *Account) error {
 	a.name = c.Name
-	a.AddEvent(&pb.AccountNameUpdated{Name: a.name})
+	//a.AddEvent(&pb.AccountNameUpdated{Name: a.name})
 	return nil
 }
 

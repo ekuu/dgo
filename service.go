@@ -196,7 +196,7 @@ func (s *service[A]) Batch(ctx context.Context, entries []*BatchEntry[A], opts .
 		as = append(as, a)
 
 		// 聚合内容是否发生了变化
-		if !a.changed() {
+		if !a.isDirty() {
 			continue
 		}
 
@@ -295,7 +295,7 @@ func (s *service[A]) executeOne(ctx context.Context, a A, fn func(ctx context.Co
 
 // executeSaveOne 执行聚合的保存动作
 func (s *service[A]) executeSaveOne(ctx context.Context, a A) (A, error) {
-	if !a.changed() {
+	if !a.isDirty() {
 		return a, nil
 	}
 	return a, s.executeOne(ctx, a, func(ctx context.Context, r Repo[A]) error {

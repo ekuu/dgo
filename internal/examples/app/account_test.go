@@ -41,7 +41,7 @@ func TestCreateAccount(t *testing.T) {
 	//initTracer()
 	//initLog()
 	rs, err := CreateAccount(context.Background(), &account.CreateCmd{
-		Name:       "lisi5",
+		Name:       "lisi9",
 		Balance:    10,
 		NameExists: mongo.NewAccountRepo(dep.MustDB()).NameExists,
 	})
@@ -60,9 +60,9 @@ func TestCreateAccount(t *testing.T) {
 func TestUpdateAccountName(t *testing.T) {
 	initLog()
 	a, err := UpdateAccountName(context.Background(), &account.UpdateNameCmd{
-		ID: "e9198660e51140ad8c94b695ca43f9c",
-		//ID:   "e9198660e51140ad8c94b695ca43f90c",
-		Name: "test-name4",
+		//ID: "e9198660e51140ad8c94b695ca43f9c",
+		ID:   "e9198660e51140ad8c94b695ca43f90c",
+		Name: "test-name9",
 	})
 	if err != nil {
 		t.Fatalf("%+v", err)

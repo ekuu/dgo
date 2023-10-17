@@ -20,7 +20,7 @@ type AggBase interface {
 
 	base() *aggBase
 	setID(id ID)
-	changed() bool
+	isDirty() bool
 	isActionTarget()
 	getEvents() Events
 }
@@ -36,6 +36,7 @@ type aggBase struct {
 	versionDelta uint64
 	now          time.Time
 	events       Events
+	changed      bool
 }
 
 func (b *aggBase) init() {
@@ -107,12 +108,8 @@ func (b *aggBase) getEvents() Events {
 	return b.events
 }
 
-func (b *aggBase) changed() bool {
-	return b.OriginalVersion() != b.Version()
-}
-
-func (b *aggBase) setUpdatedAtNow() {
-	b.updatedAt = b.Now()
+func (b *aggBase) isDirty() bool {
+	return b.changed || b.IsNew()
 }
 
 func (b *aggBase) incrVersion() uint64 {
@@ -120,16 +117,16 @@ func (b *aggBase) incrVersion() uint64 {
 	return b.Version()
 }
 
-func (b *aggBase) completeEvents(a AggBase) {
+func (b *aggBase) completeEvents(v AggBase) {
 	if len(b.events) == 0 {
-		if a.IsNew() || a.changed() {
-			a.base().incrVersion()
+		if b.isDirty() {
+			b.incrVersion()
 		}
 		return
 	}
-	aggName := getAggName(a)
+	aggName := getAggName(v)
 	topic := GenDefaultTopic(aggName)
-	if t := getTopicName(a); t != "" {
+	if t := getTopicName(v); t != "" {
 		topic = t
 	}
 	for i, e := range b.events {
