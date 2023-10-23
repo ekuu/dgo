@@ -41,7 +41,7 @@ func TestCreateAccount(t *testing.T) {
 	//initTracer()
 	//initLog()
 	rs, err := CreateAccount(context.Background(), &account.CreateCmd{
-		Name:       "lisi9",
+		Name:       "lisi91",
 		Balance:    10,
 		NameExists: mongo.NewAccountRepo(dep.MustDB()).NameExists,
 	})

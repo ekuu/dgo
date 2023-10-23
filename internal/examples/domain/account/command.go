@@ -13,6 +13,10 @@ type CreateCmd struct {
 	NameExists func(ctx context.Context, name string) (*Account, error)
 }
 
+func (c *CreateCmd) DryRun() bool {
+	return false
+}
+
 func (c *CreateCmd) Handle(ctx context.Context, a *Account) error {
 	a.name = c.Name
 	a.balance = c.Balance

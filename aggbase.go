@@ -37,6 +37,7 @@ type aggBase struct {
 	now          time.Time
 	events       Events
 	changed      bool
+	dryRun       bool
 }
 
 func (b *aggBase) init() {

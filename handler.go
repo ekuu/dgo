@@ -36,7 +36,7 @@ func handle[A AggBase](ctx context.Context, h Handler[A], a A) (A, error) {
 	ctx, span := itrace.Start(ctx, "handle")
 	defer span.End()
 
-	slog.InfoContext(ctx, "handle start", slog.Bool("isNew", a.IsNew()), slog.Group("agg", "id", a.ID(), "name", getAggName(a), "version", a.Version(), "createdAt", a.CreatedAt(), "updatedAt", a.UpdatedAt()))
+	slog.DebugContext(ctx, "handle start", slog.Bool("isNew", a.IsNew()), slog.Group("agg", "id", a.ID(), "name", getAggName(a), "version", a.Version(), "createdAt", a.CreatedAt(), "updatedAt", a.UpdatedAt()))
 
 	if err := h.Handle(ctx, a); err != nil {
 		return a, err
@@ -49,9 +49,8 @@ func handle[A AggBase](ctx context.Context, h Handler[A], a A) (A, error) {
 			return a, err
 		}
 	}
-
 	// dry run
-	if v, ok := h.(DryRunner); ok && v.DryRun() {
+	if a.base().dryRun = IsDryRun(h); a.base().dryRun {
 		slog.DebugContext(ctx, "command dry run", slog.Bool("result", true))
 		return a, nil
 	}

@@ -11,6 +11,11 @@ type DryRunner interface {
 	DryRun() bool
 }
 
+func IsDryRun(v any) bool {
+	dryRunner, ok := v.(DryRunner)
+	return ok && dryRunner.DryRun()
+}
+
 // Validator validator
 type Validator interface {
 	Validate() error

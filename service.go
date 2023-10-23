@@ -287,6 +287,9 @@ func (s *service[A]) transaction(ctx context.Context, es Events, fn func(ctx con
 
 // executeOne 执行聚合仓储操作,内部判断是否需要开启事务
 func (s *service[A]) executeOne(ctx context.Context, a A, fn func(ctx context.Context, r Repo[A]) error) error {
+	if a.base().dryRun {
+		return nil
+	}
 	if s.needTransaction(a) {
 		return s.transaction(ctx, a.getEvents(), fn)
 	}
