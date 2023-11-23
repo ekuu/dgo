@@ -82,7 +82,7 @@ func (r *Repo[I, A, D]) Event() *mg.Collection {
 	return r.event
 }
 
-func (r *Repo[I, A, D]) da2pa(ctx context.Context, da A) (Aggregate[I, D], error) {
+func (r *Repo[I, A, D]) DA2PA(ctx context.Context, da A) (Aggregate[I, D], error) {
 	data, err := r.convert(ctx, da)
 	if err != nil {
 		return nil, err
@@ -126,7 +126,7 @@ func (r *Repo[I, A, D]) List(ctx context.Context, ids ...dgo.ID) (as []A, err er
 }
 
 func (r *Repo[I, A, D]) Save(ctx context.Context, a A) error {
-	pa, err := r.da2pa(ctx, a)
+	pa, err := r.DA2PA(ctx, a)
 	if err != nil {
 		return err
 	}
