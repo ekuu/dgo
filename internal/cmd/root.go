@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/ekuu/dgo/internal/cmd/create"
+	"github.com/ekuu/dgo/internal/cmd/initial"
 	"github.com/spf13/cobra"
 	"os"
 )
@@ -12,8 +12,9 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(create.Cmd)
+	rootCmd.AddCommand(initial.Cmd)
 }
+
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
